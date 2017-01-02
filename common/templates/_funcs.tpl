@@ -12,6 +12,7 @@
 {{ include $wtf $context }}
 {{- end -}}
 
+<<<<<<< 4cf34f2046252f84f4e8e07459d5b6e37eb95591
 {{- define "hash" -}}
 {{- $name := index . 0 -}}
 {{- $context := index . 1 -}}
@@ -21,4 +22,3 @@
 {{- $wtf := $context.Template.Name | replace $last $name -}}
 {{- include $wtf $context | sha256sum | quote -}}
 {{- end -}}
-

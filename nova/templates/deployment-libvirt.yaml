@@ -1,0 +1,166 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+spec:
+  replicas: {{ .Values.global.control_replicas }}
+  template:
+    metadata:
+      labels:
+        app: nova-libvirt
+      annotations:
+        # TODO: When implemented upstream, replace the pod affinity with
+        # requiredDuringSchedulingRequiredDuringExecution
+        scheduler.alpha.kubernetes.io/affinity: '{
+            "podAffinity": {
+              "requiredDuringSchedulingIgnoredDuringExecution": [
+                {
+                  "labelSelector": {
+                    "matchExpressions": [
+                      {
+                        "key": "app",
+                        "operator": "In",
+                        "values": [
+                          "nova-libvirt"
+                        ]
+                      }
+                    ]
+                  },
+                  "topologyKey": "kubernetes.io/hostname"
+                }
+              ]
+            },
+            "podAntiAffinity": {
+              "requiredDuringSchedulingIgnoredDuringExecution": [
+                {
+                  "labelSelector": {
+                    "matchExpressions": [
+                      {
+                        "key": "app",
+                        "operator": "In",
+                        "values": [
+                          "nova-compute"
+                        ]
+                      }
+                    ]
+                  },
+                  "topologyKey": "kubernetes.io/hostname"
+                }
+              ]
+            }
+        }'
+        pod.beta.kubernetes.io/init-containers: '[
+          {
+            "name": "init",
+            "image": "{{ .Values.image.entrypoint }}",
+            "env": [
+              {
+                "name": "NAMESPACE",
+                "value": "{{ .Release.Namespace }}"
+              },
+              {
+                "name": "INTERFACE_NAME",
+                "value": "eth0"
+              },
+              {
+                "name": "DEPENDENCY_SERVICE",
+                "value": "{{  include "joinListWithColon" .Values.dependencies.libvirt.service }}"
+              },
+              {
+                "name": "DEPENDENCY_JOBS",
+                "value": "{{  include "joinListWithColon" .Values.dependencies.libvirt.jobs }}"
+              },
+              {
+                "name": "COMMAND",
+                "value": "echo done"
+              }
+            ]
+          }
+        ]'
+    spec:
+      nodeSelector:
+        {{ .Values.global.labels.compute_node_selector_key }}: {{ .Values.global.labels.compute_node_selector_value }}
+      securityContext:
+        runAsUser: 0
+      hostNetwork: true
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: nova-libvirt
+          image: {{ .Values.image.libvirt }}
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          command:
+            - bash
+            - /tmp/libvirt.sh
+          volumeMounts:
+            - name: libvirtdconf
+              mountPath: /etc/libvirt/libvirtd.conf
+              subPath: libvirtd.conf
+            - name: libvirtsh
+              mountPath: /tmp/libvirt.sh
+              subPath: libvirt.sh
+            - name: cephconf
+              mountPath: /etc/ceph/ceph.conf
+              subPath: ceph.conf
+            - name: cephclientcinderkeyring
+              mountPath: /etc/ceph/ceph.client.{{ .Values.global.ceph.cinder_user }}.keyring
+              subPath: ceph.client.{{ .Values.global.ceph.cinder_user }}.keyring
+            - mountPath: /lib/modules
+              name: libmodules
+              readOnly: true
+            - mountPath: /var/lib/nova
+              name: varlibnova
+            - mountPath: /var/lib/libvirt
+              name: varliblibvirt
+            - mountPath: /run
+              name: run
+            - mountPath: /sys/fs/cgroup
+              name: cgroup
+            - mountPath: /etc/resolv.conf
+              name: resolvconf
+              subPath: resolv.conf
+      volumes:
+        - name: libvirtdconf
+          configMap:
+            name: nova-etc
+            items:
+            - key: libvirtd.conf
+              path: libvirtd.conf
+        - name: libvirtsh
+          configMap:
+            name: nova-bin
+            items:
+            - key: libvirt.sh
+              path: libvirt.sh
+        - name: resolvconf
+          configMap:
+            name: nova-etc
+            items:
+            - key: resolv.conf
+              path: resolv.conf
+        - name: cephconf
+          configMap:
+            name: nova-etc
+            items:
+            - key: ceph.conf
+              path: ceph.conf
+        - name: cephclientcinderkeyring
+          configMap:
+            name: nova-etc
+            items:
+            - key: ceph.client.cinder.keyring.yaml
+              path: ceph.client.cinder.keyring.yaml
+        - name: libmodules
+          hostPath:
+            path: /lib/modules
+        - name: varlibnova
+          hostPath:
+            path: /var/lib/nova
+        - name: varliblibvirt
+          hostPath:
+            path: /var/lib/libvirt
+        - name: run
+          hostPath:
+            path: /run
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup

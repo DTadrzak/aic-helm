@@ -2,6 +2,7 @@
 {{- define "region"}}cluster{{- end}}
 {{- define "tld"}}local{{- end}}
 
+{{define "kubernetes_domain"}}{{ .Values.global.region }}.{{ .Values.global.tld }}{{ end }}
 #-----------------------------------------
 # hosts
 #-----------------------------------------
