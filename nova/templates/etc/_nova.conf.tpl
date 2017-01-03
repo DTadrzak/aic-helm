@@ -64,11 +64,11 @@ username = {{ .Values.global.keystone.neutron_user }}
 password = {{ .Values.global.keystone.neutron_password }}
 
 [database]
-connection = mysql+pymysql://{{ .Values.database.nova_user }}:{{ .Values.database.nova_password }}@{{ .Values.global.database.address }}/{{ .Values.database.nova_database_name }}
+connection = mysql+pymysql://{{ .Values.database.nova_user }}:{{ .Values.database.nova_password }}@{{ include "mariadb_host" .}}/{{ .Values.database.nova_database_name }}
 max_retries = -1
 
 [api_database]
-connection = mysql+pymysql://{{ .Values.database.nova_user }}:{{ .Values.database.nova_password }}@{{ .Values.global.database.address }}/{{ .Values.database.nova_api_database_name }}
+connection = mysql+pymysql://{{ .Values.database.nova_user }}:{{ .Values.database.nova_password }}@{{ include "mariadb_host" .}}/{{ .Values.database.nova_api_database_name }}
 max_retries = -1
 
 [keystone_authtoken]

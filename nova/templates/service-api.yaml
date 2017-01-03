@@ -6,7 +6,5 @@ spec:
   ports:
   - name: nova-api
     port: {{ .Values.network.port.api }}
-  - name: nova-metadata
-    port: {{ .Values.network.port.metadata }}
   selector:
     app: nova-api

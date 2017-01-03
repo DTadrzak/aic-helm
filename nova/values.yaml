@@ -1,140 +1,68 @@
-# Default values for keystone.
-# This is a YAML-formatted file.
-# Declare name/value pairs to be passed into your templates.
-# name: value
-
-labels:
-  control_node_selector_key: openstack-control-plane
-  control_node_selector_value: enabled
-  compute_node_selector_key: openstack-compute-node
-  compute_node_selector_value: enabled
-
-control_replicas: 1
-compute_replicas: 1
-
-image:
-  init: quay.io/stackanetes/stackanetes-kolla-toolbox:barcelona
-  db_sync: quay.io/stackanetes/stackanetes-nova-api:barcelona
-  api: quay.io/stackanetes/stackanetes-nova-api:barcelona
-  conductor: quay.io/stackanetes/stackanetes-nova-conductor:barcelona
-  scheduler: quay.io/stackanetes/stackanetes-nova-scheduler:barcelona
-  novncproxy: quay.io/stackanetes/stackanetes-nova-novncproxy:barcelona
-  consoleauth: quay.io/stackanetes/stackanetes-nova-consoleauth:barcelona
-  compute: quay.io/stackanetes/stackanetes-nova-compute:barcelona
-  libvirt: quay.io/stackanetes/stackanetes-nova-libvirt:barcelona
-  post: quay.io/stackanetes/stackanetes-kolla-toolbox:barcelona
-  entrypoint: quay.io/stackanetes/kubernetes-entrypoint:v0.1.0
-
-network:
-  ip_address: "0.0.0.0"
-  # TODO(DTadrzak): move external IPs to common, this variable should be shared with
-  # horizon service
-  external_ips: ""
-  minion_interface_name: "eno1"
-  dns:
-    servers:
-      - "10.3.0.10"
-
-  port:
-    api: 8774
-    metadata: 8775
-    novncproxy: 6080
-
-nova:
-  drain_timeout: 60
-
-database:
-  address: "mariadb"
-  port: 3306
-  root_user: "root"
-  root_password: "password"
-
-  nova_user: "nova"
-  nova_password: "password"
-  nova_database_name: "nova"
-  nova_api_database_name: "nova_api"
-
-keystone:
-  auth_uri: "http://keystone-api:5000"
-  auth_url: "http://keystone-api:35357"
-  admin_user: "admin"
-  admin_password: "password"
-  admin_project_name: "admin"
-  admin_region_name: "RegionOne"
-  domain_name: "default"
-  tenant_name: "admin"
-  #auth: "{'auth_url':'%s', 'username':'%s','password':'%s','project_name':'%s','domain_name':'%s'}" % [$.variables.keystone.auth_url, $.variables.keystone.admin_user, $.variables.keystone.admin_password, $.variables.keystone.admin_project_name, $.variables.keystone.domain_name]
-
-  neutron_user: "neutron"
-  neutron_password: "password"
-  neutron_region_name: "RegionOne"
-
-  nova_user: "nova"
-  nova_password: "password"
-  nova_region_name: "RegionOne"
-
-rabbitmq:
-  address: "rabbitmq"
-  admin_user: "rabbitmq"
-  admin_password: "password"
-  port: 5672
-
+global:
+  ceph:
+    cinder_keyring: ''
+    cinder_user: cinder
+    monitors: []
+    secret_uuid: ''
+  compute_replicas: 1
+  control_replicas: 1
+  database:
+    address: mariadb
+    port: 3306
+    root_password: password
+    root_user: root
+  glance:
+    api_url: http://glance-api:9292
+  keystone:
+    admin_password: password
+    admin_project_name: admin
+    admin_region_name: RegionOne
+    admin_user: admin
+    auth_uri: http://keystone-api:5000
+    auth_url: http://keystone-api:35357
+    domain_name: default
+    neutron_password: password
+    neutron_region_name: RegionOne
+    neutron_user: neutron
+    tenant_name: admin
+  labels:
+    compute_node_selector_key: openstack-compute-node
+    compute_node_selector_value: enabled
+    control_node_selector_key: openstack-control-plane
+    control_node_selector_value: enabled
+  memcached:
+    address: memcached:11211
+  network:
+    dns:
+      servers:
+      - 10.3.0.10
+    external_ips: ''
+    ip_address: 0.0.0.0
+    minion_interface_name: eno1
+  neutron:
+    api_url: http://neutron-server:9696
+    metadata_secret: password
+  rabbitmq:
+    address: rabbitmq
+    admin_password: password
+    admin_user: rabbitmq
+    port: 5672
+  region: cluster
+  tld: local
 ceph:
-  monitors: []
-
-  cinder_user: "cinder"
-  cinder_keyring: ""
-  nova_pool: "vms"
-  secret_uuid: ""
-
-glance:
-  api_url: "http://glance-api:9292"
-
-neutron:
-  api_url: "http://neutron-server:9696"
-  metadata_secret: "password"
-
-memcached:
-  address: "memcached:11211"
-
-misc:
-  debug: false
-  workers: 8
-
+  nova_pool: vms
+database:
+  nova_api_database_name: nova_api
+  nova_database_name: nova
+  nova_password: password
+  nova_user: nova
 dependencies:
   api:
-    jobs: 
+    jobs:
     - mariadb-seed
     - keystone-db-sync
     - nova-init
     - nova-db-sync
-    service:
-    - mariadb
-  db_sync:
-    jobs:
-    - nova-init
-    - keystone-init
-    - mariadb-seed
-    service:
-    - mariadb
-  db_sync:
-    jobs:
-    - nova-init
-    - keystone-init
-    - mariadb-seed
-    service:
-    - mariadb
-  post:
-    jobs:
-    - nova-init
-    - keystone-init
-    - mariadb-seed
-    service:
-    - mariadb
-    - nova-api
-  init:
-    jobs:
-    - mariadb-seed
     service:
     - mariadb
   compute:
@@ -145,30 +73,6 @@ dependencies:
     service:
     - keystone-api
     - nova-api
-  libvirt:
-    jobs:
-    - nova-init
-    - nova-post
-    - nova-db-sync
-    service:
-    - keystone-api
-    - nova-api
-  consoleauth:
-    jobs:
-    - mariadb-seed
-    - keystone-db-sync
-    - nova-init
-    - nova-db-sync
-    service:
-    - mariadb
-  scheduler:
-    jobs:
-    - mariadb-seed
-    - keystone-db-sync
-    - nova-init
-    - nova-db-sync
-    service:
-    - mariadb
   conductor:
     jobs:
     - mariadb-seed
@@ -177,3 +81,80 @@ dependencies:
     - nova-db-sync
     service:
     - mariadb
+  consoleauth:
+    jobs:
+    - mariadb-seed
+    - keystone-db-sync
+    - nova-init
+    - nova-db-sync
+    service:
+    - mariadb
+  db_sync:
+    jobs:
+    - nova-init
+    - keystone-init
+    - mariadb-seed
+    service:
+    - mariadb
+  init:
+    jobs:
+    - mariadb-seed
+    service:
+    - mariadb
+  libvirt:
+    jobs:
+    - nova-init
+    - nova-post
+    - nova-db-sync
+    service:
+    - keystone-api
+    - nova-api
+  novncproxy:
+    jobs:
+    - mariadb-seed
+    - keystone-db-sync
+    - nova-init
+    - nova-db-sync
+    service:
+    - mariadb
+  post:
+    jobs:
+    - nova-init
+    - nova-db-sync
+    - keystone-init
+    - mariadb-seed
+    service:
+    - mariadb
+    - nova-api
+  scheduler:
+    jobs:
+    - mariadb-seed
+    - keystone-db-sync
+    - nova-init
+    - nova-db-sync
+    service:
+    - mariadb
+image:
+  api: quay.io/stackanetes/stackanetes-nova-api:newton
+  compute: quay.io/stackanetes/stackanetes-nova-compute:newton
+  conductor: quay.io/stackanetes/stackanetes-nova-conductor:newton
+  consoleauth: quay.io/stackanetes/stackanetes-nova-consoleauth:newton
+  db_sync: quay.io/stackanetes/stackanetes-nova-api:newton
+  entrypoint: quay.io/stackanetes/kubernetes-entrypoint:v0.1.0
+  init: quay.io/stackanetes/stackanetes-kolla-toolbox:newton
+  libvirt: quay.io/stackanetes/stackanetes-nova-libvirt:newton
+  novncproxy: quay.io/stackanetes/stackanetes-nova-novncproxy:newton
+  post: quay.io/stackanetes/stackanetes-kolla-toolbox:newton
+  scheduler: quay.io/stackanetes/stackanetes-nova-scheduler:newton
+keystone:
+  nova_password: password
+  nova_region_name: RegionOne
+  nova_user: nova
+misc:
+  debug: false
+  workers: 8
+network:
+  port:
+    api: 8774
+    metadata: 8775
+    novncproxy: 6080

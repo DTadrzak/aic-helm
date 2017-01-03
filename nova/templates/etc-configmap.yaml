@@ -5,7 +5,3 @@ metadata:
 data:
   nova.conf: |+
 {{ tuple "etc/_nova.conf.tpl" . | include "template" | indent 4 }}
-  ceph.client.cinder.keyring.yaml: |+
-{{ tuple "etc/_ceph.client.cinder.keyring.yaml.tpl" . | include "template" | indent 4 }}
-  resolv.conf: |+
-{{ tuple "etc/_resolv.conf.tpl" . | include "template" | indent 4 }}

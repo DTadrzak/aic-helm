@@ -67,16 +67,16 @@ global:
 
 nova:
   image:
-    init: quay.io/stackanetes/stackanetes-kolla-toolbox:barcelona
-    db_sync: quay.io/stackanetes/stackanetes-nova-api:barcelona
-    api: quay.io/stackanetes/stackanetes-nova-api:barcelona
-    conductor: quay.io/stackanetes/stackanetes-nova-conductor:barcelona
-    scheduler: quay.io/stackanetes/stackanetes-nova-scheduler:barcelona
-    novncproxy: quay.io/stackanetes/stackanetes-nova-novncproxy:barcelona
-    consoleauth: quay.io/stackanetes/stackanetes-nova-consoleauth:barcelona
-    compute: quay.io/stackanetes/stackanetes-nova-compute:barcelona
-    libvirt: quay.io/stackanetes/stackanetes-nova-libvirt:barcelona
-    post: quay.io/stackanetes/stackanetes-kolla-toolbox:barcelona
+    init: quay.io/stackanetes/stackanetes-kolla-toolbox:newton
+    db_sync: quay.io/stackanetes/stackanetes-nova-api:newton
+    api: quay.io/stackanetes/stackanetes-nova-api:newton
+    conductor: quay.io/stackanetes/stackanetes-nova-conductor:newton
+    scheduler: quay.io/stackanetes/stackanetes-nova-scheduler:newton
+    novncproxy: quay.io/stackanetes/stackanetes-nova-novncproxy:newton
+    consoleauth: quay.io/stackanetes/stackanetes-nova-consoleauth:newton
+    compute: quay.io/stackanetes/stackanetes-nova-compute:newton
+    libvirt: quay.io/stackanetes/stackanetes-nova-libvirt:newton
+    post: quay.io/stackanetes/stackanetes-kolla-toolbox:newton
     entrypoint: quay.io/stackanetes/kubernetes-entrypoint:v0.1.0
 
   network:
@@ -117,13 +117,7 @@ nova:
       - nova-init
       - keystone-init
       - mariadb-seed
-      service:
-      - mariadb
-    db_sync:
-      jobs:
-      - nova-init
-      - keystone-init
-      - mariadb-seed
+      - nova-db-sync
       service:
       - mariadb
     post:
@@ -172,6 +166,14 @@ nova:
       service:
       - mariadb
     conductor:
+      jobs:
+      - mariadb-seed
+      - keystone-db-sync
+      - nova-init
+      - nova-db-sync
+      service:
+      - mariadb
+    novncproxy:
       jobs:
       - mariadb-seed
       - keystone-db-sync
